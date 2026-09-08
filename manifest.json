@@ -1,6 +1,3 @@
-
--- manifest.json --
-```json
 {
   "name": "Expense Splitter (INR)",
   "short_name": "Splitter",
@@ -24,5 +21,3 @@
     }
   ]
 }
-```
-
