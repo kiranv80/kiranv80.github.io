@@ -1,0 +1,494 @@
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Expense Splitter (INR) — PWA</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#1f6feb"/>
+  <link rel="manifest" href="/manifest.json">
+  <!-- Apple touch icon (optional) -->
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <style>
+    :root {
+      --accent: #1f6feb;
+      --muted: #666;
+      --card: #fff;
+      --bg: #f4f7fb;
+      --danger: #e53e3e;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body { height:100%; margin:0; background:var(--bg); color:#111; }
+    .wrap { max-width:980px; margin:28px auto; padding:20px; }
+    header { display:flex; align-items:center; gap:16px; margin-bottom:18px; }
+    header h1 { margin:0; font-size:20px; }
+    .card { background:var(--card); border-radius:10px; box-shadow:0 6px 18px rgba(34,40,56,0.08); padding:16px; margin-bottom:16px; }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    label { font-size:13px; color:var(--muted); }
+    input[type="text"], input[type="number"], input[type="date"], select, textarea {
+      padding:8px 10px; border-radius:8px; border:1px solid #d6dce9; min-width:160px;
+      font-size:14px;
+    }
+    button { background:var(--accent); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+    button.danger { background:var(--danger); }
+    .people-list { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .person-pill { padding:8px 10px; border-radius:20px; background:#f1f6ff; border:1px solid #dce9ff; font-weight:600; font-size:14px; display:flex; gap:8px; align-items:center;}
+    .person-pill button { background:transparent; border:none; color:var(--muted); cursor:pointer; font-weight:700; }
+    .small { font-size:13px; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { padding:8px 6px; text-align:left; border-bottom:1px solid #f0f2f6; font-size:14px; }
+    .right { text-align:right; }
+    .muted { color:var(--muted); font-size:13px; }
+    .balance-positive { color:green; font-weight:700; }
+    .balance-negative { color:var(--danger); font-weight:700; }
+    .settlement { margin-top:12px; }
+    .no-data { color:var(--muted); padding:12px 0; }
+    .participants-box { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    .participant-checkbox { display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:8px; border:1px solid #eee; background:#fafafa; font-size:13px; }
+    .top-actions { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .install-bar { display:flex; gap:8px; align-items:center; }
+    @media (max-width:700px) {
+      .row { flex-direction:column; align-items:stretch; }
+      input[type="date"]{ min-width:unset; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Expense Splitter — INR (PWA)</h1>
+      <div class="small">Add people, record transactions and see minimal settlements. Install to your device for app-like experience.</div>
+    </header>
+
+    <section class="card" id="people-card">
+      <div class="top-actions">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <label for="person-name">Add person (name)</label>
+          <input id="person-name" type="text" placeholder="e.g., Aman" />
+          <button id="add-person">Add</button>
+          <div class="small">Max 10 people</div>
+        </div>
+        <div>
+          <button id="export-json" class="ghost">Export JSON</button>
+          <button id="import-json" class="ghost">Import JSON</button>
+          <button id="reset-all" class="ghost">Reset everything</button>
+        </div>
+      </div>
+      <div id="people-list" class="people-list"></div>
+      <input id="import-file" type="file" accept="application/json" style="display:none;" />
+    </section>
+
+    <section class="card" id="transaction-card" style="display:none;">
+      <h3 style="margin-top:0;">Add transaction</h3>
+      <div class="row" style="margin-top:6px;">
+        <div style="min-width:180px;">
+          <label for="txn-date">Date</label><br/>
+          <input id="txn-date" type="date" />
+        </div>
+        <div style="min-width:220px;">
+          <label for="txn-desc">Description</label><br/>
+          <input id="txn-desc" type="text" placeholder="Lunch, taxi, groceries..." />
+        </div>
+        <div>
+          <label for="txn-amount">Amount (INR)</label><br/>
+          <input id="txn-amount" type="number" min="0" step="0.01" placeholder="0.00" />
+        </div>
+        <div>
+          <label for="txn-payer">Payer</label><br/>
+          <select id="txn-payer"></select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Participants (who share this expense)</label>
+        <div id="participants" class="participants-box"></div>
+        <div class="small" style="margin-top:8px;">Each selected participant pays an equal share. Penny remainders are distributed deterministically.</div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button id="add-transaction">Add transaction</button>
+      </div>
+
+      <div id="transactions-list" style="margin-top:18px;">
+        <h4 style="margin-bottom:6px;">Transactions</h4>
+        <div id="tx-table-wrap"></div>
+      </div>
+    </section>
+
+    <section class="card" id="summary-card" style="display:none;">
+      <h3 style="margin-top:0;">Summary</h3>
+      <div id="person-balances"></div>
+
+      <div class="settlement">
+        <h4 style="margin-bottom:6px;">Minimal settlements (who pays whom)</h4>
+        <div id="settlements-output"></div>
+      </div>
+    </section>
+
+    <div id="install-container" style="position:fixed; right:18px; bottom:18px;"></div>
+  </div>
+
+  <script>
+    // -------------------------
+    // PWA: service worker registration and install prompt handling
+    // -------------------------
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        console.log('Service worker registered:', reg);
+      }).catch(err => {
+        console.warn('Service worker registration failed:', err);
+      });
+    }
+
+    // Handle beforeinstallprompt for manual install UI
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showInstallButton();
+    });
+
+    function showInstallButton() {
+      const container = document.getElementById('install-container');
+      container.innerHTML = '';
+      if (!deferredPrompt) return;
+      const btn = document.createElement('button');
+      btn.textContent = 'Install Expense Splitter';
+      btn.className = '';
+      btn.addEventListener('click', async () => {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        console.log('Install response:', choice);
+        deferredPrompt = null;
+        container.innerHTML = '';
+      });
+      container.appendChild(btn);
+    }
+
+    // -------------------------
+    // App state + persistence
+    // -------------------------
+    const STATE_KEY = 'expenseSplitterState_v1';
+
+    // Utility: currency formatting for INR (paise integer -> display)
+    function formatINR(paise) {
+      const sign = paise < 0 ? "-" : "";
+      const abs = Math.abs(paise);
+      const rupees = Math.floor(abs / 100);
+      const pennies = abs % 100;
+      return sign + "₹" + rupees.toLocaleString('en-IN') + "." + (pennies < 10 ? "0"+pennies : pennies);
+    }
+
+    const state = {
+      people: [],
+      transactions: []
+    };
+
+    // DOM refs
+    const personNameInput = document.getElementById('person-name');
+    const addPersonBtn = document.getElementById('add-person');
+    const peopleListEl = document.getElementById('people-list');
+    const txnCard = document.getElementById('transaction-card');
+    const txnDate = document.getElementById('txn-date');
+    const txnDesc = document.getElementById('txn-desc');
+    const txnAmount = document.getElementById('txn-amount');
+    const txnPayer = document.getElementById('txn-payer');
+    const participantsBox = document.getElementById('participants');
+    const addTxnBtn = document.getElementById('add-transaction');
+    const txTableWrap = document.getElementById('tx-table-wrap');
+    const summaryCard = document.getElementById('summary-card');
+    const personBalancesEl = document.getElementById('person-balances');
+    const settlementsOutput = document.getElementById('settlements-output');
+    const resetAllBtn = document.getElementById('reset-all');
+    const exportBtn = document.getElementById('export-json');
+    const importBtn = document.getElementById('import-json');
+    const importFileInput = document.getElementById('import-file');
+
+    function uid(prefix='id') { return prefix + '_' + Math.random().toString(36).slice(2,9); }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STATE_KEY, JSON.stringify(state));
+      } catch (e) { console.warn('Could not save state:', e); }
+    }
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STATE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.people) && Array.isArray(parsed.transactions)) {
+          state.people = parsed.people;
+          state.transactions = parsed.transactions;
+        }
+      } catch (e) { console.warn('Could not load state:', e); }
+    }
+
+    // render functions
+    function renderPeople() {
+      peopleListEl.innerHTML = '';
+      txnPayer.innerHTML = '';
+      participantsBox.innerHTML = '';
+      state.people.forEach((p) => {
+        const pill = document.createElement('div');
+        pill.className = 'person-pill';
+        pill.innerHTML = `<span>${p.name}</span>`;
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.title = 'Remove person';
+        delBtn.addEventListener('click', () => {
+          if (!confirm('Remove ' + p.name + '? This will delete any transactions involving them.')) return;
+          state.people = state.people.filter(x => x.id !== p.id);
+          state.transactions = state.transactions.filter(t => t.payerId !== p.id && !t.participantIds.includes(p.id));
+          refreshUI();
+        });
+        pill.appendChild(delBtn);
+        peopleListEl.appendChild(pill);
+
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        txnPayer.appendChild(opt);
+
+        const chkWrap = document.createElement('label');
+        chkWrap.className = 'participant-checkbox';
+        const inp = document.createElement('input');
+        inp.type = 'checkbox';
+        inp.value = p.id;
+        inp.checked = true;
+        chkWrap.appendChild(inp);
+        chkWrap.appendChild(document.createTextNode(p.name));
+        participantsBox.appendChild(chkWrap);
+      });
+
+      if (state.people.length > 0) {
+        txnCard.style.display = 'block';
+        summaryCard.style.display = 'block';
+      } else {
+        txnCard.style.display = 'none';
+        summaryCard.style.display = 'none';
+      }
+    }
+
+    function renderTransactions() {
+      if (state.transactions.length === 0) {
+        txTableWrap.innerHTML = '<div class="no-data">No transactions yet.</div>';
+        return;
+      }
+      let html = `<table><thead><tr>
+        <th>Date</th><th>Description</th><th>Payer</th><th>Participants</th><th class="right">Amount</th><th></th>
+        </tr></thead><tbody>`;
+      state.transactions.slice().reverse().forEach(tx => {
+        const payer = personById(tx.payerId);
+        const participants = tx.participantIds.map(id => personById(id)?.name || '?').join(', ');
+        html += `<tr>
+          <td>${tx.date}</td>
+          <td>${escapeHtml(tx.desc)}</td>
+          <td>${escapeHtml(payer ? payer.name : 'Unknown')}</td>
+          <td>${escapeHtml(participants)}</td>
+          <td class="right">${formatINR(tx.amountPaise)}</td>
+          <td class="right"><button data-id="${tx.id}" class="del-tx ghost">Delete</button></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      txTableWrap.innerHTML = html;
+      txTableWrap.querySelectorAll('.del-tx').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          if (!confirm('Delete transaction?')) return;
+          state.transactions = state.transactions.filter(t => t.id !== id);
+          refreshUI();
+        });
+      });
+    }
+
+    function personById(id) {
+      return state.people.find(p => p.id === id);
+    }
+    function escapeHtml(s) {
+      if (!s) return '';
+      return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
+    }
+
+    function addPerson(name) {
+      name = name.trim();
+      if (!name) { alert('Please enter a name.'); return; }
+      if (state.people.length >= 10) { alert('Maximum 10 people allowed.'); return; }
+      if (state.people.some(p=>p.name.toLowerCase()===name.toLowerCase())) {
+        alert('A person with that name already exists.');
+        return;
+      }
+      state.people.push({ id: uid('p'), name });
+      personNameInput.value = '';
+      refreshUI();
+    }
+
+    function addTransactionFromForm() {
+      if (state.people.length === 0) { alert('Add at least one person.'); return; }
+      const date = txnDate.value || (new Date()).toISOString().slice(0,10);
+      const desc = txnDesc.value.trim() || '(no description)';
+      const rawAmount = txnAmount.value;
+      if (!rawAmount || isNaN(rawAmount) || Number(rawAmount) <= 0) { alert('Enter a positive amount.'); return; }
+      const amountPaise = Math.round(Number(rawAmount) * 100);
+      const payerId = txnPayer.value;
+      const participantInputs = Array.from(participantsBox.querySelectorAll('input[type="checkbox"]'));
+      const participantIds = participantInputs.filter(i=>i.checked).map(i=>i.value);
+      if (participantIds.length === 0) { alert('Select at least one participant.'); return; }
+      const shareBase = Math.floor(amountPaise / participantIds.length);
+      let remainder = amountPaise - shareBase * participantIds.length;
+      const sharesPaise = {};
+      participantIds.forEach((pid) => {
+        const add = remainder > 0 ? 1 : 0;
+        sharesPaise[pid] = shareBase + add;
+        if (add) remainder--;
+      });
+      const tx = {
+        id: uid('t'),
+        date,
+        desc,
+        amountPaise,
+        payerId,
+        participantIds: participantIds.slice(),
+        sharesPaise,
+        createdAt: new Date().toISOString()
+      };
+      state.transactions.push(tx);
+      txnDesc.value = '';
+      txnAmount.value = '';
+      refreshUI();
+    }
+
+    function computeBalances() {
+      const balances = {};
+      state.people.forEach(p => balances[p.id] = 0);
+      state.transactions.forEach(tx => {
+        balances[tx.payerId] = (balances[tx.payerId] || 0) + tx.amountPaise;
+        tx.participantIds.forEach(pid => {
+          const share = tx.sharesPaise[pid] || 0;
+          balances[pid] = (balances[pid] || 0) - share;
+        });
+      });
+      return balances;
+    }
+
+    function computeSettlements(balancesMap) {
+      const creditors = [];
+      const debtors = [];
+      for (const id in balancesMap) {
+        const b = balancesMap[id];
+        if (b > 0) creditors.push({ id, amount: b });
+        else if (b < 0) debtors.push({ id, amount: -b });
+      }
+      creditors.sort((a,b) => b.amount - a.amount);
+      debtors.sort((a,b) => b.amount - a.amount);
+      const settlements = [];
+      let i = 0, j = 0;
+      while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+        const settle = Math.min(debtor.amount, creditor.amount);
+        settlements.push({ fromId: debtor.id, toId: creditor.id, amountPaise: settle });
+        debtor.amount -= settle;
+        creditor.amount -= settle;
+        if (debtor.amount === 0) i++;
+        if (creditor.amount === 0) j++;
+      }
+      return settlements;
+    }
+
+    function renderSummary() {
+      const balances = computeBalances();
+      if (state.people.length === 0) {
+        personBalancesEl.innerHTML = '';
+        settlementsOutput.innerHTML = '';
+        return;
+      }
+      let html = `<table><thead><tr><th>Person</th><th class="right">Net balance</th></tr></thead><tbody>`;
+      state.people.forEach(p => {
+        const b = balances[p.id] || 0;
+        let cls = '';
+        if (b > 0) cls = 'balance-positive';
+        else if (b < 0) cls = 'balance-negative';
+        html += `<tr><td>${escapeHtml(p.name)}</td><td class="right ${cls}">${formatINR(b)}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      personBalancesEl.innerHTML = html;
+      const settlements = computeSettlements(balances);
+      if (settlements.length === 0) {
+        settlementsOutput.innerHTML = '<div class="no-data">Everything is settled — no transfers needed.</div>';
+      } else {
+        let shtml = '<table><thead><tr><th>From</th><th>To</th><th class="right">Amount</th></tr></thead><tbody>';
+        settlements.forEach(s => {
+          shtml += `<tr><td>${escapeHtml(personById(s.fromId).name)}</td><td>${escapeHtml(personById(s.toId).name)}</td><td class="right">${formatINR(s.amountPaise)}</td></tr>`;
+        });
+        shtml += '</tbody></table>';
+        settlementsOutput.innerHTML = shtml;
+      }
+    }
+
+    function refreshUI() {
+      renderPeople();
+      renderTransactions();
+      renderSummary();
+      saveState();
+    }
+
+    // Handlers
+    addPersonBtn.addEventListener('click', () => addPerson(personNameInput.value));
+    personNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addPerson(personNameInput.value); });
+    addTxnBtn.addEventListener('click', addTransactionFromForm);
+    resetAllBtn.addEventListener('click', () => {
+      if (!confirm('Reset all people and transactions?')) return;
+      state.people = [];
+      state.transactions = [];
+      refreshUI();
+    });
+
+    // Export / Import
+    exportBtn.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'expense-splitter-export.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    importBtn.addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (parsed && Array.isArray(parsed.people) && Array.isArray(parsed.transactions)) {
+            if (!confirm('Import will replace current data. Continue?')) return;
+            state.people = parsed.people;
+            state.transactions = parsed.transactions;
+            refreshUI();
+            alert('Import successful.');
+          } else {
+            alert('Invalid file format.');
+          }
+        } catch (err) {
+          alert('Failed to parse file: ' + err);
+        }
+      };
+      reader.readAsText(f);
+    });
+
+    // Init
+    txnDate.value = new Date().toISOString().slice(0,10);
+    loadState();
+    refreshUI();
+
+    // Expose API for debugging
+    window.EXP_APP = { state, refreshUI, computeBalances, computeSettlements };
+  </script>
+</body>
+</html>
+```
