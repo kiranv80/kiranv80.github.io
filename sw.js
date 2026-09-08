@@ -1,5 +1,3 @@
--- sw.js (service worker) --
-```javascript
 const CACHE_NAME = 'expense-splitter-v1';
 const ASSETS_TO_CACHE = [
   '/',          // index.html
@@ -73,4 +71,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-```
