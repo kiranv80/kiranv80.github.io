@@ -2,187 +2,160 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Expense Splitter (INR) — PWA</title>
+  <title>Expense Splitter — Shared Rooms (INR)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#1f6feb"/>
   <link rel="manifest" href="/manifest.json">
-  <!-- Apple touch icon (optional) -->
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <style>
-    :root {
-      --accent: #1f6feb;
-      --muted: #666;
-      --card: #fff;
-      --bg: #f4f7fb;
-      --danger: #e53e3e;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-    html,body { height:100%; margin:0; background:var(--bg); color:#111; }
-    .wrap { max-width:980px; margin:28px auto; padding:20px; }
-    header { display:flex; align-items:center; gap:16px; margin-bottom:18px; }
-    header h1 { margin:0; font-size:20px; }
-    .card { background:var(--card); border-radius:10px; box-shadow:0 6px 18px rgba(34,40,56,0.08); padding:16px; margin-bottom:16px; }
-    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-    label { font-size:13px; color:var(--muted); }
-    input[type="text"], input[type="number"], input[type="date"], select, textarea {
-      padding:8px 10px; border-radius:8px; border:1px solid #d6dce9; min-width:160px;
-      font-size:14px;
-    }
-    button { background:var(--accent); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
-    button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
-    button.danger { background:var(--danger); }
-    .people-list { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-    .person-pill { padding:8px 10px; border-radius:20px; background:#f1f6ff; border:1px solid #dce9ff; font-weight:600; font-size:14px; display:flex; gap:8px; align-items:center;}
-    .person-pill button { background:transparent; border:none; color:var(--muted); cursor:pointer; font-weight:700; }
-    .small { font-size:13px; color:var(--muted); }
-    table { width:100%; border-collapse:collapse; margin-top:12px; }
-    th, td { padding:8px 6px; text-align:left; border-bottom:1px solid #f0f2f6; font-size:14px; }
-    .right { text-align:right; }
-    .muted { color:var(--muted); font-size:13px; }
-    .balance-positive { color:green; font-weight:700; }
-    .balance-negative { color:var(--danger); font-weight:700; }
-    .settlement { margin-top:12px; }
-    .no-data { color:var(--muted); padding:12px 0; }
-    .participants-box { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-    .participant-checkbox { display:flex; align-items:center; gap:6px; padding:4px 8px; border-radius:8px; border:1px solid #eee; background:#fafafa; font-size:13px; }
-    .top-actions { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-bottom:12px; }
-    .install-bar { display:flex; gap:8px; align-items:center; }
-    @media (max-width:700px) {
-      .row { flex-direction:column; align-items:stretch; }
-      input[type="date"]{ min-width:unset; }
-    }
+    /* (Same styling as before; trimmed for brevity) */
+    :root { --accent: #1f6feb; --muted:#666; --card:#fff; --bg:#f4f7fb; --danger:#e53e3e; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
+    html,body{height:100%;margin:0;background:var(--bg);color:#111}
+    .wrap{max-width:980px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    header h1{margin:0;font-size:20px}
+    .card{background:var(--card);border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(34,40,56,0.06)}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    input,select,textarea{padding:8px;border-radius:8px;border:1px solid #d6dce9}
+    button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+    button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+    .small{font-size:13px;color:var(--muted)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #f0f2f6}
+    .right{text-align:right}
+    .person-pill{padding:8px 10px;border-radius:20px;background:#f1f6ff;border:1px solid #dce9ff;display:inline-flex;gap:8px;align-items:center}
+    .install-bar{position:fixed;right:18px;bottom:18px}
+    .status{font-size:13px;color:var(--muted)}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Expense Splitter — INR (PWA)</h1>
-      <div class="small">Add people, record transactions and see minimal settlements. Install to your device for app-like experience.</div>
+      <div>
+        <h1>Expense Splitter — Shared Rooms</h1>
+        <div class="small">Share the room URL to let friends join and edit the same data.</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div id="room-controls" class="small"></div>
+        <div id="connection-status" class="status"></div>
+      </div>
     </header>
 
-    <section class="card" id="people-card">
-      <div class="top-actions">
-        <div style="display:flex; gap:8px; align-items:center;">
-          <label for="person-name">Add person (name)</label>
-          <input id="person-name" type="text" placeholder="e.g., Aman" />
-          <button id="add-person">Add</button>
-          <div class="small">Max 10 people</div>
-        </div>
-        <div>
-          <button id="export-json" class="ghost">Export JSON</button>
-          <button id="import-json" class="ghost">Import JSON</button>
-          <button id="reset-all" class="ghost">Reset everything</button>
-        </div>
+    <section class="card">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="create-room">Create room</button>
+        <button id="copy-link" class="ghost" style="display:none">Copy room link</button>
+        <button id="leave-room" class="ghost" style="display:none">Leave room</button>
+        <button id="work-local" class="ghost">Work locally</button>
+        <div id="share-hint" class="small"></div>
       </div>
-      <div id="people-list" class="people-list"></div>
-      <input id="import-file" type="file" accept="application/json" style="display:none;" />
     </section>
 
-    <section class="card" id="transaction-card" style="display:none;">
-      <h3 style="margin-top:0;">Add transaction</h3>
-      <div class="row" style="margin-top:6px;">
-        <div style="min-width:180px;">
-          <label for="txn-date">Date</label><br/>
-          <input id="txn-date" type="date" />
-        </div>
-        <div style="min-width:220px;">
-          <label for="txn-desc">Description</label><br/>
-          <input id="txn-desc" type="text" placeholder="Lunch, taxi, groceries..." />
-        </div>
-        <div>
-          <label for="txn-amount">Amount (INR)</label><br/>
-          <input id="txn-amount" type="number" min="0" step="0.01" placeholder="0.00" />
-        </div>
-        <div>
-          <label for="txn-payer">Payer</label><br/>
-          <select id="txn-payer"></select>
-        </div>
+    <!-- People card -->
+    <section class="card" id="people-card">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label for="person-name">Add person</label>
+        <input id="person-name" type="text" placeholder="e.g., Aman" />
+        <button id="add-person">Add</button>
+        <div class="small">Max 10 people</div>
       </div>
+      <div id="people-list" style="margin-top:10px"></div>
+    </section>
 
-      <div style="margin-top:12px;">
-        <label>Participants (who share this expense)</label>
-        <div id="participants" class="participants-box"></div>
-        <div class="small" style="margin-top:8px;">Each selected participant pays an equal share. Penny remainders are distributed deterministically.</div>
+    <!-- Transaction card -->
+    <section class="card" id="transaction-card" style="display:none">
+      <h3 style="margin:0 0 8px 0">Add transaction</h3>
+      <div class="row">
+        <div><label>Date</label><br/><input id="txn-date" type="date" /></div>
+        <div style="min-width:220px"><label>Description</label><br/><input id="txn-desc" type="text" /></div>
+        <div><label>Amount (INR)</label><br/><input id="txn-amount" type="number" step="0.01" min="0" /></div>
+        <div><label>Payer</label><br/><select id="txn-payer"></select></div>
       </div>
-
-      <div style="margin-top:12px;">
+      <div style="margin-top:10px">
+        <label>Participants</label>
+        <div id="participants" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <div class="small">Selected participants split equally.</div>
+      </div>
+      <div style="margin-top:10px">
         <button id="add-transaction">Add transaction</button>
       </div>
 
-      <div id="transactions-list" style="margin-top:18px;">
-        <h4 style="margin-bottom:6px;">Transactions</h4>
+      <div style="margin-top:14px">
+        <h4 style="margin:0 0 6px 0">Transactions</h4>
         <div id="tx-table-wrap"></div>
       </div>
     </section>
 
-    <section class="card" id="summary-card" style="display:none;">
-      <h3 style="margin-top:0;">Summary</h3>
+    <section class="card" id="summary-card" style="display:none">
+      <h3 style="margin:0 0 8px 0">Summary</h3>
       <div id="person-balances"></div>
-
-      <div class="settlement">
-        <h4 style="margin-bottom:6px;">Minimal settlements (who pays whom)</h4>
+      <div style="margin-top:8px">
+        <h4 style="margin:0 0 6px 0">Minimal settlements</h4>
         <div id="settlements-output"></div>
       </div>
     </section>
 
-    <div id="install-container" style="position:fixed; right:18px; bottom:18px;"></div>
+    <section class="card">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="export-json" class="ghost">Export JSON</button>
+        <button id="import-json" class="ghost">Import JSON</button>
+        <button id="reset-all" class="ghost">Reset</button>
+        <input id="import-file" type="file" accept="application/json" style="display:none" />
+      </div>
+      <div class="small" style="margin-top:8px">Export/Import helps move a room snapshot manually if needed.</div>
+    </section>
   </div>
 
-  <script>
-    // -------------------------
-    // PWA: service worker registration and install prompt handling
-    // -------------------------
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(reg => {
-        console.log('Service worker registered:', reg);
-      }).catch(err => {
-        console.warn('Service worker registration failed:', err);
-      });
-    }
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-    // Handle beforeinstallprompt for manual install UI
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      showInstallButton();
+  <script>
+    // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyB_mNbEHIdXsx0BPzXf_wsGsOzVzjsIGak",
+  authDomain: "splitapp-8eb08.firebaseapp.com",
+  projectId: "splitapp-8eb08",
+  storageBucket: "splitapp-8eb08.firebasestorage.app",
+  messagingSenderId: "833724475626",
+  appId: "1:833724475626:web:51ec55148ed2e3ab278f93"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Enable offline persistence (best-effort)
+    db.enablePersistence().catch(err => {
+      console.warn('Persistence error', err && err.code);
     });
 
-    function showInstallButton() {
-      const container = document.getElementById('install-container');
-      container.innerHTML = '';
-      if (!deferredPrompt) return;
-      const btn = document.createElement('button');
-      btn.textContent = 'Install Expense Splitter';
-      btn.className = '';
-      btn.addEventListener('click', async () => {
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        console.log('Install response:', choice);
-        deferredPrompt = null;
-        container.innerHTML = '';
-      });
-      container.appendChild(btn);
-    }
+    // Sign in anonymously so Firestore rules requiring auth work
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        auth.signInAnonymously().catch(err => console.error('Auth error', err));
+      }
+    });
 
-    // -------------------------
-    // App state + persistence
-    // -------------------------
-    const STATE_KEY = 'expenseSplitterState_v1';
-
-    // Utility: currency formatting for INR (paise integer -> display)
+    // Utility formatting
     function formatINR(paise) {
       const sign = paise < 0 ? "-" : "";
       const abs = Math.abs(paise);
       const rupees = Math.floor(abs / 100);
       const pennies = abs % 100;
-      return sign + "₹" + rupees.toLocaleString('en-IN') + "." + (pennies < 10 ? "0"+pennies : pennies);
+      return sign + "₹" + rupees.toLocaleString('en-IN') + "." + (pennies<10 ? "0"+pennies : pennies);
     }
+    function uid(prefix='id') { return prefix + '_' + Math.random().toString(36).slice(2,9); }
+    function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function qs() { return new URLSearchParams(location.search); }
 
-    const state = {
-      people: [],
-      transactions: []
-    };
+    // App state and local persistence key
+    const STATE_KEY = 'expenseSplitterState_v1_shared';
+    const state = { people: [], transactions: [] };
 
     // DOM refs
     const personNameInput = document.getElementById('person-name');
@@ -199,19 +172,26 @@
     const summaryCard = document.getElementById('summary-card');
     const personBalancesEl = document.getElementById('person-balances');
     const settlementsOutput = document.getElementById('settlements-output');
-    const resetAllBtn = document.getElementById('reset-all');
+
+    const createRoomBtn = document.getElementById('create-room');
+    const copyLinkBtn = document.getElementById('copy-link');
+    const leaveRoomBtn = document.getElementById('leave-room');
+    const workLocalBtn = document.getElementById('work-local');
+    const roomControls = document.getElementById('room-controls');
+    const connectionStatus = document.getElementById('connection-status');
     const exportBtn = document.getElementById('export-json');
     const importBtn = document.getElementById('import-json');
     const importFileInput = document.getElementById('import-file');
+    const resetAllBtn = document.getElementById('reset-all');
 
-    function uid(prefix='id') { return prefix + '_' + Math.random().toString(36).slice(2,9); }
+    // Room management
+    let currentRoomId = null;
+    let roomUnsubscribe = null;
+    let isApplyingRemote = false;
+    let pushTimer = null;
 
-    function saveState() {
-      try {
-        localStorage.setItem(STATE_KEY, JSON.stringify(state));
-      } catch (e) { console.warn('Could not save state:', e); }
-    }
-    function loadState() {
+    function saveLocal() { try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch(e){ console.warn(e); } }
+    function loadLocal() {
       try {
         const raw = localStorage.getItem(STATE_KEY);
         if (!raw) return;
@@ -220,43 +200,115 @@
           state.people = parsed.people;
           state.transactions = parsed.transactions;
         }
-      } catch (e) { console.warn('Could not load state:', e); }
+      } catch(e) { console.warn('loadLocal', e); }
     }
 
-    // render functions
+    // Apply remote snapshot without pushing it back immediately
+    function applyRemoteState(remoteState) {
+      isApplyingRemote = true;
+      // Overwrite local state with remote
+      state.people = remoteState.people || [];
+      state.transactions = remoteState.transactions || [];
+      refreshUI(); // this will call saveLocal but we avoid pushing to server by isApplyingRemote flag
+      isApplyingRemote = false;
+    }
+
+    // Create random long room id (use crypto for randomness)
+    function makeRoomId(len=24) {
+      const arr = new Uint8Array(len);
+      crypto.getRandomValues(arr);
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      return Array.from(arr).map(b => chars[b % chars.length]).join('');
+    }
+
+    // Push local state to Firestore (debounced)
+    function schedulePushToRoom() {
+      if (!currentRoomId || isApplyingRemote) return;
+      if (pushTimer) clearTimeout(pushTimer);
+      pushTimer = setTimeout(pushNowToRoom, 800);
+    }
+    async function pushNowToRoom() {
+      if (!currentRoomId) return;
+      try {
+        await db.collection('rooms').doc(currentRoomId).set({
+          state: state,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        //console.log('Pushed to room', currentRoomId);
+      } catch (err) {
+        console.warn('Push error', err);
+      }
+    }
+
+    // Join a room and listen for realtime changes
+    function joinRoom(roomId) {
+      leaveRoom(); // clear any current
+      currentRoomId = roomId;
+      roomControls.innerHTML = 'Room: <strong>' + escapeHtml(roomId) + '</strong>';
+      copyLinkBtn.style.display = 'inline-block';
+      leaveRoomBtn.style.display = 'inline-block';
+      workLocalBtn.style.display = 'inline-block';
+      // Listen to changes on the room doc
+      const docRef = db.collection('rooms').doc(roomId);
+      roomUnsubscribe = docRef.onSnapshot(snap => {
+        if (snap.exists) {
+          const data = snap.data();
+          if (data && data.state) {
+            applyRemoteState(data.state);
+          }
+        } else {
+          // No room yet — push current local state to create it
+          if (!isApplyingRemote) {
+            pushNowToRoom();
+          }
+        }
+      }, err => {
+        console.error('Room snapshot error', err);
+        connectionStatus.textContent = 'Realtime error';
+      });
+      connectionStatus.textContent = 'Connected to room (realtime)';
+    }
+
+    function leaveRoom() {
+      if (roomUnsubscribe) {
+        roomUnsubscribe();
+        roomUnsubscribe = null;
+      }
+      currentRoomId = null;
+      roomControls.textContent = '';
+      copyLinkBtn.style.display = 'none';
+      leaveRoomBtn.style.display = 'none';
+      connectionStatus.textContent = 'Working locally';
+    }
+
+    // UI rendering
     function renderPeople() {
       peopleListEl.innerHTML = '';
       txnPayer.innerHTML = '';
       participantsBox.innerHTML = '';
-      state.people.forEach((p) => {
+      state.people.forEach(p => {
         const pill = document.createElement('div');
         pill.className = 'person-pill';
-        pill.innerHTML = `<span>${p.name}</span>`;
+        pill.innerHTML = `<span>${escapeHtml(p.name)}</span>`;
         const delBtn = document.createElement('button');
-        delBtn.textContent = '✕';
-        delBtn.title = 'Remove person';
+        delBtn.textContent = '✕'; delBtn.title = 'Remove';
+        delBtn.style.background='transparent'; delBtn.style.border='none'; delBtn.style.cursor='pointer';
         delBtn.addEventListener('click', () => {
-          if (!confirm('Remove ' + p.name + '? This will delete any transactions involving them.')) return;
+          if (!confirm('Remove ' + p.name + '? This will remove any transactions involving them.')) return;
           state.people = state.people.filter(x => x.id !== p.id);
           state.transactions = state.transactions.filter(t => t.payerId !== p.id && !t.participantIds.includes(p.id));
-          refreshUI();
+          onLocalChange();
         });
         pill.appendChild(delBtn);
         peopleListEl.appendChild(pill);
 
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name;
+        const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name;
         txnPayer.appendChild(opt);
 
-        const chkWrap = document.createElement('label');
-        chkWrap.className = 'participant-checkbox';
-        const inp = document.createElement('input');
-        inp.type = 'checkbox';
-        inp.value = p.id;
-        inp.checked = true;
-        chkWrap.appendChild(inp);
-        chkWrap.appendChild(document.createTextNode(p.name));
+        const chkWrap = document.createElement('label'); chkWrap.style.display='inline-flex'; chkWrap.style.alignItems='center';
+        chkWrap.style.padding='4px 8px'; chkWrap.style.borderRadius='8px'; chkWrap.style.border='1px solid #eee'; chkWrap.style.marginRight='6px';
+        const inp = document.createElement('input'); inp.type='checkbox'; inp.value=p.id; inp.checked=true;
+        chkWrap.appendChild(inp); chkWrap.appendChild(document.createTextNode(p.name));
         participantsBox.appendChild(chkWrap);
       });
 
@@ -271,17 +323,15 @@
 
     function renderTransactions() {
       if (state.transactions.length === 0) {
-        txTableWrap.innerHTML = '<div class="no-data">No transactions yet.</div>';
+        txTableWrap.innerHTML = '<div class="small">No transactions yet.</div>';
         return;
       }
-      let html = `<table><thead><tr>
-        <th>Date</th><th>Description</th><th>Payer</th><th>Participants</th><th class="right">Amount</th><th></th>
-        </tr></thead><tbody>`;
+      let html = `<table><thead><tr><th>Date</th><th>Description</th><th>Payer</th><th>Participants</th><th class="right">Amount</th><th></th></tr></thead><tbody>`;
       state.transactions.slice().reverse().forEach(tx => {
-        const payer = personById(tx.payerId);
-        const participants = tx.participantIds.map(id => personById(id)?.name || '?').join(', ');
+        const payer = state.people.find(p=>p.id===tx.payerId);
+        const participants = tx.participantIds.map(id => (state.people.find(p=>p.id===id)||{}).name||'?').join(', ');
         html += `<tr>
-          <td>${tx.date}</td>
+          <td>${escapeHtml(tx.date)}</td>
           <td>${escapeHtml(tx.desc)}</td>
           <td>${escapeHtml(payer ? payer.name : 'Unknown')}</td>
           <td>${escapeHtml(participants)}</td>
@@ -296,197 +346,205 @@
           const id = btn.getAttribute('data-id');
           if (!confirm('Delete transaction?')) return;
           state.transactions = state.transactions.filter(t => t.id !== id);
-          refreshUI();
+          onLocalChange();
         });
       });
-    }
-
-    function personById(id) {
-      return state.people.find(p => p.id === id);
-    }
-    function escapeHtml(s) {
-      if (!s) return '';
-      return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
-    }
-
-    function addPerson(name) {
-      name = name.trim();
-      if (!name) { alert('Please enter a name.'); return; }
-      if (state.people.length >= 10) { alert('Maximum 10 people allowed.'); return; }
-      if (state.people.some(p=>p.name.toLowerCase()===name.toLowerCase())) {
-        alert('A person with that name already exists.');
-        return;
-      }
-      state.people.push({ id: uid('p'), name });
-      personNameInput.value = '';
-      refreshUI();
-    }
-
-    function addTransactionFromForm() {
-      if (state.people.length === 0) { alert('Add at least one person.'); return; }
-      const date = txnDate.value || (new Date()).toISOString().slice(0,10);
-      const desc = txnDesc.value.trim() || '(no description)';
-      const rawAmount = txnAmount.value;
-      if (!rawAmount || isNaN(rawAmount) || Number(rawAmount) <= 0) { alert('Enter a positive amount.'); return; }
-      const amountPaise = Math.round(Number(rawAmount) * 100);
-      const payerId = txnPayer.value;
-      const participantInputs = Array.from(participantsBox.querySelectorAll('input[type="checkbox"]'));
-      const participantIds = participantInputs.filter(i=>i.checked).map(i=>i.value);
-      if (participantIds.length === 0) { alert('Select at least one participant.'); return; }
-      const shareBase = Math.floor(amountPaise / participantIds.length);
-      let remainder = amountPaise - shareBase * participantIds.length;
-      const sharesPaise = {};
-      participantIds.forEach((pid) => {
-        const add = remainder > 0 ? 1 : 0;
-        sharesPaise[pid] = shareBase + add;
-        if (add) remainder--;
-      });
-      const tx = {
-        id: uid('t'),
-        date,
-        desc,
-        amountPaise,
-        payerId,
-        participantIds: participantIds.slice(),
-        sharesPaise,
-        createdAt: new Date().toISOString()
-      };
-      state.transactions.push(tx);
-      txnDesc.value = '';
-      txnAmount.value = '';
-      refreshUI();
     }
 
     function computeBalances() {
       const balances = {};
       state.people.forEach(p => balances[p.id] = 0);
       state.transactions.forEach(tx => {
-        balances[tx.payerId] = (balances[tx.payerId] || 0) + tx.amountPaise;
+        balances[tx.payerId] = (balances[tx.payerId]||0) + tx.amountPaise;
         tx.participantIds.forEach(pid => {
           const share = tx.sharesPaise[pid] || 0;
-          balances[pid] = (balances[pid] || 0) - share;
+          balances[pid] = (balances[pid]||0) - share;
         });
       });
       return balances;
     }
 
     function computeSettlements(balancesMap) {
-      const creditors = [];
-      const debtors = [];
+      const creditors = []; const debtors = [];
       for (const id in balancesMap) {
         const b = balancesMap[id];
-        if (b > 0) creditors.push({ id, amount: b });
-        else if (b < 0) debtors.push({ id, amount: -b });
+        if (b > 0) creditors.push({id,amount:b});
+        else if (b < 0) debtors.push({id,amount:-b});
       }
-      creditors.sort((a,b) => b.amount - a.amount);
-      debtors.sort((a,b) => b.amount - a.amount);
+      creditors.sort((a,b)=>b.amount-a.amount);
+      debtors.sort((a,b)=>b.amount-a.amount);
       const settlements = [];
-      let i = 0, j = 0;
-      while (i < debtors.length && j < creditors.length) {
-        const debtor = debtors[i];
-        const creditor = creditors[j];
-        const settle = Math.min(debtor.amount, creditor.amount);
-        settlements.push({ fromId: debtor.id, toId: creditor.id, amountPaise: settle });
-        debtor.amount -= settle;
-        creditor.amount -= settle;
-        if (debtor.amount === 0) i++;
-        if (creditor.amount === 0) j++;
+      let i=0,j=0;
+      while(i<debtors.length && j<creditors.length){
+        const d=debtors[i], c=creditors[j];
+        const settle = Math.min(d.amount,c.amount);
+        settlements.push({fromId:d.id,toId:c.id,amountPaise:settle});
+        d.amount -= settle; c.amount -= settle;
+        if (d.amount === 0) i++; if (c.amount === 0) j++;
       }
       return settlements;
     }
 
     function renderSummary() {
       const balances = computeBalances();
-      if (state.people.length === 0) {
-        personBalancesEl.innerHTML = '';
-        settlementsOutput.innerHTML = '';
-        return;
-      }
-      let html = `<table><thead><tr><th>Person</th><th class="right">Net balance</th></tr></thead><tbody>`;
+      if (state.people.length === 0) { personBalancesEl.innerHTML=''; settlementsOutput.innerHTML=''; return; }
+      let html = `<table><thead><tr><th>Person</th><th class="right">Net</th></tr></thead><tbody>`;
       state.people.forEach(p => {
-        const b = balances[p.id] || 0;
-        let cls = '';
-        if (b > 0) cls = 'balance-positive';
-        else if (b < 0) cls = 'balance-negative';
+        const b = balances[p.id]||0;
+        const cls = b>0 ? 'balance-positive' : (b<0 ? 'balance-negative' : '');
         html += `<tr><td>${escapeHtml(p.name)}</td><td class="right ${cls}">${formatINR(b)}</td></tr>`;
       });
-      html += '</tbody></table>';
-      personBalancesEl.innerHTML = html;
-      const settlements = computeSettlements(balances);
-      if (settlements.length === 0) {
-        settlementsOutput.innerHTML = '<div class="no-data">Everything is settled — no transfers needed.</div>';
-      } else {
-        let shtml = '<table><thead><tr><th>From</th><th>To</th><th class="right">Amount</th></tr></thead><tbody>';
-        settlements.forEach(s => {
-          shtml += `<tr><td>${escapeHtml(personById(s.fromId).name)}</td><td>${escapeHtml(personById(s.toId).name)}</td><td class="right">${formatINR(s.amountPaise)}</td></tr>`;
-        });
-        shtml += '</tbody></table>';
-        settlementsOutput.innerHTML = shtml;
-      }
+      html += '</tbody></table>'; personBalancesEl.innerHTML = html;
+      const sets = computeSettlements(balances);
+      if (!sets.length) { settlementsOutput.innerHTML = '<div class="small">All settled</div>'; return; }
+      let shtml = `<table><thead><tr><th>From</th><th>To</th><th class="right">Amount</th></tr></thead><tbody>`;
+      sets.forEach(s => {
+        shtml += `<tr><td>${escapeHtml((state.people.find(p=>p.id===s.fromId)||{}).name || '?')}</td><td>${escapeHtml((state.people.find(p=>p.id===s.toId)||{}).name || '?')}</td><td class="right">${formatINR(s.amountPaise)}</td></tr>`;
+      });
+      shtml += '</tbody></table>'; settlementsOutput.innerHTML = shtml;
+    }
+
+    // UI actions that modify local state should call this
+    function onLocalChange() {
+      saveLocal();
+      if (!isApplyingRemote) schedulePushToRoom();
+      refreshUI();
     }
 
     function refreshUI() {
       renderPeople();
       renderTransactions();
       renderSummary();
-      saveState();
     }
 
-    // Handlers
-    addPersonBtn.addEventListener('click', () => addPerson(personNameInput.value));
-    personNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addPerson(personNameInput.value); });
-    addTxnBtn.addEventListener('click', addTransactionFromForm);
+    // Form handlers
+    addPersonBtn.addEventListener('click', () => {
+      const name = personNameInput.value.trim();
+      if (!name) { alert('Enter a name'); return; }
+      if (state.people.length >= 10) { alert('Max 10 people'); return; }
+      if (state.people.some(p => p.name.toLowerCase()===name.toLowerCase())) { alert('Duplicate'); return; }
+      state.people.push({ id: uid('p'), name });
+      personNameInput.value='';
+      onLocalChange();
+    });
+    personNameInput.addEventListener('keydown', e => { if (e.key==='Enter') addPersonBtn.click(); });
+
+    addTxnBtn.addEventListener('click', () => {
+      if (!state.people.length) { alert('Add people first'); return; }
+      const date = txnDate.value || new Date().toISOString().slice(0,10);
+      const desc = txnDesc.value.trim() || '(no description)';
+      const raw = txnAmount.value;
+      if (!raw || isNaN(raw) || Number(raw) <= 0) { alert('Enter amount'); return; }
+      const amountPaise = Math.round(Number(raw) * 100);
+      const payerId = txnPayer.value;
+      const participantInputs = Array.from(participantsBox.querySelectorAll('input[type="checkbox"]'));
+      const participantIds = participantInputs.filter(i => i.checked).map(i => i.value);
+      if (!participantIds.length) { alert('Select participants'); return; }
+      const base = Math.floor(amountPaise / participantIds.length);
+      let rem = amountPaise - base * participantIds.length;
+      const sharesPaise = {};
+      participantIds.forEach(pid => {
+        const add = rem > 0 ? 1 : 0;
+        sharesPaise[pid] = base + add;
+        if (add) rem--;
+      });
+      const tx = { id: uid('t'), date, desc, amountPaise, payerId, participantIds: participantIds.slice(), sharesPaise, createdAt: new Date().toISOString() };
+      state.transactions.push(tx);
+      txnDesc.value=''; txnAmount.value='';
+      onLocalChange();
+    });
+
     resetAllBtn.addEventListener('click', () => {
-      if (!confirm('Reset all people and transactions?')) return;
-      state.people = [];
-      state.transactions = [];
-      refreshUI();
+      if (!confirm('Reset all data?')) return;
+      state.people=[]; state.transactions=[];
+      onLocalChange();
     });
 
     // Export / Import
     exportBtn.addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'expense-splitter-export.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const a = document.createElement('a'); a.href = url; a.download = 'expense-splitter-export.json';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     });
-
     importBtn.addEventListener('click', () => importFileInput.click());
-    importFileInput.addEventListener('change', (e) => {
-      const f = e.target.files[0];
-      if (!f) return;
+    importFileInput.addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = ev => {
         try {
           const parsed = JSON.parse(ev.target.result);
           if (parsed && Array.isArray(parsed.people) && Array.isArray(parsed.transactions)) {
             if (!confirm('Import will replace current data. Continue?')) return;
-            state.people = parsed.people;
-            state.transactions = parsed.transactions;
-            refreshUI();
-            alert('Import successful.');
-          } else {
-            alert('Invalid file format.');
-          }
-        } catch (err) {
-          alert('Failed to parse file: ' + err);
-        }
+            state.people = parsed.people; state.transactions = parsed.transactions;
+            onLocalChange(); alert('Import done');
+          } else alert('Invalid file');
+        } catch(err) { alert('Failed to parse: ' + err); }
       };
       reader.readAsText(f);
     });
 
-    // Init
-    txnDate.value = new Date().toISOString().slice(0,10);
-    loadState();
-    refreshUI();
+    // Create/join/leave room buttons
+    createRoomBtn.addEventListener('click', () => {
+      const id = makeRoomId(28);
+      const url = new URL(location.href);
+      url.searchParams.set('room', id);
+      // navigate to new room
+      location.href = url.toString();
+    });
+    copyLinkBtn.addEventListener('click', async () => {
+      const url = location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('Room link copied');
+      } catch(e) {
+        prompt('Copy this URL', url);
+      }
+    });
+    leaveRoomBtn.addEventListener('click', () => {
+      if (!confirm('Leave room and work locally?')) return;
+      const url = new URL(location.href);
+      url.searchParams.delete('room');
+      location.href = url.toString(); // reload without room
+    });
+    workLocalBtn.addEventListener('click', () => {
+      const url = new URL(location.href);
+      url.searchParams.delete('room');
+      location.href = url.toString();
+    });
 
-    // Expose API for debugging
-    window.EXP_APP = { state, refreshUI, computeBalances, computeSettlements };
+    // On load: restore local state, read room param, and join room if present
+    (function init(){
+      txnDate.value = new Date().toISOString().slice(0,10);
+      loadLocal();
+      const params = qs();
+      const room = params.get('room');
+      if (room) {
+        // ensure signed in before joining
+        auth.onAuthStateChanged(u => {
+          if (u) {
+            joinRoom(room);
+            copyLinkBtn.style.display='inline-block';
+            leaveRoomBtn.style.display='inline-block';
+            roomControls.textContent = 'Room: ' + room;
+            refreshUI();
+          }
+        });
+      } else {
+        connectionStatus.textContent = 'Working locally (no room)';
+        refreshUI();
+      }
+
+      // Monitor connection state (basic)
+      const connectedRef = firebase.database ? firebase.database().ref('.info/connected') : null;
+      // Firestore doesn't have a simple connected-to-backend flag in web SDK; we just show auth state for now
+      auth.onAuthStateChanged(u => {
+        connectionStatus.textContent = u ? 'Signed in (anonymous)' : 'Not signed in';
+      });
+    })();
+
+    // Save local on unload as an extra precaution
+    window.addEventListener('beforeunload', () => saveLocal());
   </script>
 </body>
 </html>
